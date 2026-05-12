@@ -1,0 +1,86 @@
+// Capital Pets - Database Schema
+// PostgreSQL via Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum SaleType {
+  MANUAL
+  ONLINE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  slug     String    @unique
+  imageUrl String?
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal    @db.Decimal(10, 2)
+  stock       Int        @default(0)
+  imageUrl    String?
+  isActive    Boolean    @default(true)
+  categoryId  Int
+  category    Category   @relation(fields: [categoryId], references: [id])
+  saleItems   SaleItem[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("products")
+}
+
+model Sale {
+  id        String     @id @default(uuid())
+  total     Decimal    @db.Decimal(10, 2)
+  date      DateTime   @default(now())
+  type      SaleType   @default(MANUAL)
+  status    String     @default("Pendiente")
+  items     SaleItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("sale_items")
+}
